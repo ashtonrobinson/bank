@@ -7,11 +7,10 @@ import "./Wallet.sol";
 
 contract Account {
     // the associated multisignature wallet
-    Wallet public wallet;
+    Wallet private wallet;
 
     string public firstName;
     string public lastName;
-
 
     // deploy the account before setting the associated wallet
     constructor (string memory _first, string memory _last){
@@ -19,9 +18,12 @@ contract Account {
         lastName = _last;
     }
 
-    function initiateWallet(address[] calldata _owners) external {
-        // call the constructor passing the
-        wallet = new Wallet(_owners);
+    // function initiateWallet(address[] calldata _owners) external {
+    //     wallet = new Wallet(_owners);
+    // }
+
+    receive() external payable {
+        
     }
 
 

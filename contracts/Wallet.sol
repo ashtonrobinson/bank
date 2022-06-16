@@ -15,14 +15,12 @@ contract Wallet {
         bool executed;
     }
 
-    
     address[] public owners;
     mapping(address => bool) isOwner;
-
     
-    Transaction[] public transactions;
     // uses the index of each transaction in transactions as key
     mapping(uint => mapping (address => bool)) public confirmations;
+    Transaction[] public transactions;
     
     //modifiers
     modifier checkOwnersLength(uint len){
@@ -44,6 +42,11 @@ contract Wallet {
             isOwner[owner] = true;
             owners.push(owner);
         }
+    }
+
+    // getter method for owners
+    function getOwners() external view returns (address[] memory) {
+        return owners;
     }
 
     // function to allow the contract to recieve funds
