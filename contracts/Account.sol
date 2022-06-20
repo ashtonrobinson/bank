@@ -3,8 +3,9 @@
 pragma solidity ^0.8.4;
 
 import "./Wallet.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Account {
+contract Account is Ownable{
     // the associated multisignature wallet
     Wallet private wallet;
 
