@@ -4,7 +4,6 @@ pragma solidity ^0.8.4;
 
 import "./Wallet.sol";
 
-
 contract Account {
     // the associated multisignature wallet
     Wallet private wallet;
@@ -22,6 +21,9 @@ contract Account {
     //     wallet = new Wallet(_owners);
     // }
 
+
+    // forward funds to the associated Wallet if it has been initiated, 
+    // else hold funds, then send when the wallet has been created
     receive() external payable {
         
     }

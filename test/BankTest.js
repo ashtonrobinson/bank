@@ -20,7 +20,13 @@ describe("Bank Contract Testing Suite", function () {
         //test 1, correct owners
         it('correct owner', async function () {
             // only three owners allowed
-            expect(await Bank.owner()).to.equal(owner.address);
+            await expect(Bank.owner()).to.equal(owner.address);
+        });
+
+        //test 2, not iniated
+        it('not initiated', async function () {
+            // initiated should be set to false
+            await expect(Bank.initiated()).to.equal(false);
         });
     });
 });
