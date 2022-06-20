@@ -90,9 +90,9 @@ describe("Wallet Contract Testing Suite", function () {
 
         // length of approvers is larger
         it('five signers', async function () {
-            let addresses = signers.slice(5).map(sign => sign.address);
+            let addres = signers.slice(5).map(sign => sign.address);
 
-            await expect(WalletFactory.deploy(addresses)).to.be.revertedWith("only 3 signers allowed");
+            await expect(WalletFactory.deploy(addres)).to.be.revertedWith("only 3 signers allowed");
         });
 
         //duplicate approvers
@@ -196,7 +196,10 @@ describe("Wallet Contract Testing Suite", function () {
 
         // reset after each test so that there is no pending txn
         afterEach(async function () {
-            await connection.revokePendingTransaction();
+            if (await Wallet.hasPendingTransaction()){
+                await expect(connection.revokePendingTransaction()).to.emit(Wallet, "RevokePendingTransaction")
+                    .withArgs(approver.address);
+            }
         });
 
         //test 1, transaction request from the approver when wallet has a balance
@@ -214,6 +217,47 @@ describe("Wallet Contract Testing Suite", function () {
 
             //attempt to create the same transaction again, should revert
             await expect(connection.createTransaction(to, value, "0x")).to.be.revertedWith("pending txn exists already");
+        });
+
+        // test 2, approver creates the request with bad values
+        it('value greater than acct balance, value = 0, value equal to balance', async function () {
+            //randomly pick an address
+            to = signers[Math.floor(Math.random()*(signers.length))].address;
+            data = "0x"; 
+
+            //first try with a value of zero
+            await expect(connection.createTransaction(to, 0, data)).to.be.revertedWith("cannot send nothing");
+
+            // use current balance to query a value greaters
+            currBalance = await provider.getBalance(Wallet.address);
+            value = currBalance.add(ethers.utils.parseEther('1'));
+
+             //first try with a value of zero
+            await expect(connection.createTransaction(to, value, data)).to.be.revertedWith("contract needs more funds");
+
+            //finally query correctly with the entire account balance
+            await expect(connection.createTransaction(to, currBalance, data)).to.emit(Wallet, "SubmitTransaction")
+                .withArgs(approver.address, to, currBalance, data);
+
+        });
+
+        //test 3, approver attempts to send to incorrect addressses
+        it('invalid addresses', async function () {
+            // pick invalis address
+            value = ethers.utils.parseEther('1');
+            data = '0x';
+
+            //try to send funds back to the contract
+            to = Wallet.address;
+            await expect(connection.createTransaction(to, value, data)).to.be.revertedWith("cannot send to contract's address");
+
+            //zero address
+            to = "0x0000000000000000000000000000000000000000";
+            await expect(connection.createTransaction(to, value, data)).to.be.revertedWith("cannot send to null address");
+
+            //owner address, cannot send here since funds are forwarded from the owners recieve()
+            to = owner.address;
+            await expect(connection.createTransaction(to, value, data)).to.be.revertedWith("cannot send to creator of this wallet");
         });
 
     });

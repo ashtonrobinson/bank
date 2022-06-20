@@ -24,8 +24,6 @@ contract Wallet is Ownable{
     // only allows a single transaction to be queued,
     Transaction public pendingTransaction;
     bool public hasPendingTransaction;
-    // only valid inputs to this map are approvers
-    mapping (address => bool) public confirmations;
 
     // the list of transactions that have been confirmed
     Transaction[] public confirmedTransactions;
@@ -66,7 +64,7 @@ contract Wallet is Ownable{
 
     // check that the contract has enough funds to send
     modifier balanceExists(uint value){
-        require(address(this).balance > value, "contract needs more funds");
+        require(address(this).balance >= value, "contract needs more funds");
         require(value > 0 wei, "cannot send nothing");
         _;
     }
