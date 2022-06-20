@@ -1,5 +1,4 @@
-const { EtherscanProvider } = require('@ethersproject/providers');
-const { expect } = require('chai');
+const { expect, assert } = require('chai');
 const { ethers, waffle} = require("hardhat");
 
 // testing suite for Account.sol
@@ -16,6 +15,9 @@ describe("Wallet Contract Testing Suite", function () {
     // addresses of the 3 approvers
     let addresses;
 
+    // the balance after ether has been recieved to the wallet
+    let balanceAfter;
+
     // create the contract factory before anything runs
     before(async function () {
         provider = waffle.provider;
@@ -23,10 +25,7 @@ describe("Wallet Contract Testing Suite", function () {
         WalletFactory = await ethers.getContractFactory('Wallet');
         // pull out owners to test contract with
         [owner, ...signers] = await ethers.getSigners();
-    })
 
-    //redeploy the contract before each test
-    beforeEach(async function () {
         // choose three random addresses to create the wallet with
         function chooseThree(upperBound) {
             chosen = new Set();
@@ -71,7 +70,7 @@ describe("Wallet Contract Testing Suite", function () {
 
         //test 2, correct balance of zero on deployment
         it('correct balance', async function () {
-            expect(await Wallet.getValue()).to.equal(0);
+            expect(await provider.getBalance(Wallet.address)).to.equal(0);
         });
     });
 
@@ -125,9 +124,18 @@ describe("Wallet Contract Testing Suite", function () {
         let walletAddr;
         let balanceBefore;
 
-        beforeEach(async function () {
+        before(async function () {
             walletAddr = Wallet.address;
+        });
+
+        beforeEach(async function () {
             balanceBefore = await provider.getBalance(walletAddr);
+        });
+
+        // asserts that the balance is non zero before attempting to create transactions
+        after(async function () {
+            balanceAfter = await provider.getBalance(Wallet.address);
+            assert(balanceAfter > 0);
         });
 
         //test 1, recieving ether from owner, no ether in contract
@@ -172,14 +180,42 @@ describe("Wallet Contract Testing Suite", function () {
                 .withArgs(randomSingers[2].address, value3);
 
             expect(await provider.getBalance(walletAddr)).to.equal(balanceBefore.add(value1).add(value2).add(value3));
-        });
-
-
+        });   
     });
 
     // correctly create a transaction
     describe("Transaction Creation", function () {
-        
+        let approver;
+        let connection;
+    
+        // assign an approver to initiate the transaction
+        beforeEach(async function () {
+            approver = approvers[Math.floor(Math.random()*3)];
+            connection = await Wallet.connect(approver);
+        });
+
+        // reset after each test so that there is no pending txn
+        afterEach(async function () {
+            await connection.revokePendingTransaction();
+        });
+
+        //test 1, transaction request from the approver when wallet has a balance
+        it('correct creation, no double requests', async function () {
+            //randomly pick an address
+            to = signers[Math.floor(Math.random()*(signers.length))].address;
+            // send a small amount
+            value = ethers.utils.parseEther('1');
+            data = "0x";
+
+            await expect(connection.createTransaction(to, value, "0x")).to.emit(Wallet, "SubmitTransaction")
+                .withArgs(approver.address, to, value, data);
+            
+            expect(await Wallet.hasPendingTransaction()).to.be.true;
+
+            //attempt to create the same transaction again, should revert
+            await expect(connection.createTransaction(to, value, "0x")).to.be.revertedWith("pending txn exists already");
+        });
+
     });
 
     
