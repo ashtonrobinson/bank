@@ -23,8 +23,8 @@ describe("Account Contract Testing Suite", function () {
         //test 1, correct owners
         it('correct account name', async function () {
             // only three owners allowed
-            await expect(Account.firstName()).to.equal(first);
-            await expect(Account.lastName()).to.equal(last);
+            expect(await Account.firstName()).to.equal(first);
+            expect(await Account.lastName()).to.equal(last);
         });
     });
 

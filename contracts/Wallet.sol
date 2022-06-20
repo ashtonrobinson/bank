@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Wallet is Ownable{
     //defines the parameters for multisignature wallets
-    uint constant private MAX_OWNERS = 3;   
+    uint constant private MAX_APPROVERS = 3;   
     uint constant private NUM_CONFIRMATIONS_REQUIRED = 2;
 
     // each transaction will have the following format
@@ -17,8 +17,8 @@ contract Wallet is Ownable{
         bool executed;
     }
 
-    address[3] public owners;
-    mapping(address => bool) isOwner;
+    address[3] public approvers;
+    mapping(address => bool) isApprover;
     
     // uses the index of each transaction in transactions as key
     mapping(uint => mapping (address => bool)) public confirmations;
@@ -28,14 +28,14 @@ contract Wallet is Ownable{
     event Deposit(address indexed from, uint amount, uint balance);
     
     // only three keys are allowed to be associated with this wallet
-    modifier checkOwnersLength(uint len){
-        require(len == MAX_OWNERS, "only 3 signers allowed");
+    modifier checkApproversLength(uint len){
+        require(len == MAX_APPROVERS, "only 3 signers allowed");
         _;
     }
 
     // check if the interaction with this contract is valid
     modifier onlyApprover(){
-        require(isOwner[msg.sender], "not owner");
+        require(isApprover[msg.sender], "not approver");
         _;
     }
 
@@ -50,23 +50,24 @@ contract Wallet is Ownable{
     modifier validAddress(address addr) {
         require(address(this) != addr, "cannot send to contract's address");
         require(addr != address(0), "cannot send to null address");
+        // the function owner() is inhereited from Ownable and returns the address that deployed this contract
         require(addr != owner(), "cannot send to creator of this wallet");
         _;
     }
 
     // create a contract 
-    constructor (address[] memory _owners) 
-        checkOwnersLength(_owners.length)
+    constructor (address[] memory _approvers) 
+        checkApproversLength(_approvers.length)
     {
-        for (uint i = 0; i < _owners.length; i++){
-            address owner = _owners[i];
+        for (uint i = 0; i < _approvers.length; i++){
+            address approver = _approvers[i];
 
             // require address to not be the zero address
-            require(owner != address(0), "invalid owner");
-            require(!isOwner[owner], "owner not unique");
+            require(approver != address(0), "invalid approver");
+            require(!isApprover[approver], "approver not unique");
 
-            isOwner[owner] = true;
-            owners[i] = owner;
+            isApprover[approver] = true;
+            approvers[i] = approver;
         }
     }
 
@@ -75,9 +76,9 @@ contract Wallet is Ownable{
         emit Deposit(msg.sender, msg.value, address(this).balance);
     }
 
-    // returns the owners(addresses) of this specific wallet
-    function getOwners() external view returns (address[3] memory) {
-        return owners;
+    // returns the approvers(addresses) of this specific wallet
+    function getApprovers() external view returns (address[3] memory) {
+        return approvers;
     }
 
     // returns the balance of this speicific wallet
