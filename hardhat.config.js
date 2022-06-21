@@ -13,7 +13,11 @@ task("balance", "Prints an account's balance")
   });
 
 const alchemyKey = process.env.ALCHEMY;
-const privateKey = process.env.PRIVATE_KEY;
+const devKey = `0x`+ process.env.DEPLOYER;
+
+const appKeyOne = `0x`+ process.env.APPROVER_ONE;
+const appKeyTwo = `0x`+ process.env.APPROVER_TWO;
+const appKeyThree = `0x`+ process.env.APPROVER_THREE;
 
 
 /**
@@ -27,7 +31,7 @@ module.exports = {
     goerli: {
       url: `https://eth-goerli.alchemyapi.io/v2/${alchemyKey}`,
       chainId: 5,
-      accounts: [`0x`+privateKey],
+      accounts: [devKey, appKeyOne, appKeyTwo, appKeyThree],
     }
   },
   solidity: {

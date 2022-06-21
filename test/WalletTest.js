@@ -1,5 +1,5 @@
 const { expect, assert } = require('chai');
-const { ethers, waffle} = require("hardhat");
+const { ethers, waffle } = require("hardhat");
 
 // testing suite for Account.sol
 describe("Wallet Contract Testing Suite", function () {

@@ -8,8 +8,6 @@ contract Wallet is Ownable{
     //defines the parameters for multisignature wallets
     uint constant private MAX_APPROVERS = 3;   
 
-    
-
     // list of addresses associted with this wallet
     address[3] public approvers;
     mapping(address => bool) public isApprover;
@@ -164,8 +162,6 @@ contract Wallet is Ownable{
 
         if (success){
             emit TransactionExecuted(confirmer);
-        } else {
-            revert("unable to execute transaction");
         }
     }
 
