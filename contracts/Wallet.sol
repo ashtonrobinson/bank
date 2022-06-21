@@ -8,25 +8,23 @@ contract Wallet is Ownable{
     //defines the parameters for multisignature wallets
     uint constant private MAX_APPROVERS = 3;   
 
+    
+
+    // list of addresses associted with this wallet
+    address[3] public approvers;
+    mapping(address => bool) public isApprover;
+
     // each transaction will have the following format
     struct Transaction {
         address destination;
         uint value;
         bytes data;
         address creator;
-        bool approved;
     }
-
-    // list of addresses associted with this wallet
-    address[3] public approvers;
-    mapping(address => bool) public isApprover;
 
     // only allows a single transaction to be queued,
     Transaction public pendingTransaction;
     bool public hasPendingTransaction;
-
-    // the list of transactions that have been confirmed
-    Transaction[] public confirmedTransactions;
 
     event Deposit(address indexed from, uint amount);
     event SubmitTransaction(
@@ -36,6 +34,7 @@ contract Wallet is Ownable{
         bytes data
     );
     event RevokePendingTransaction(address indexed creator);
+    event TransactionExecuted(address indexed confirmer);
 
     // only three keys are allowed to be associated with this wallet
     modifier checkApproversLength(uint len){
@@ -78,11 +77,23 @@ contract Wallet is Ownable{
         _;
     }
 
+    // ensure that there exists a pending transaction to send
+    modifier pendingTransactionExists(){
+        require(hasPendingTransaction, "no pending transaction");
+        _;
+    }
+
+    // check that the confirmer of the transaction is a different approver than the creator
+    modifier notTransactionCreator(){
+        require(msg.sender != pendingTransaction.creator, "creator cannot confirm and execute");
+        _;
+    }
+
     // create a contract 
     constructor (address[] memory _approvers) 
         checkApproversLength(_approvers.length)
     {
-        for (uint i = 0; i < _approvers.length; i++){
+        for (uint i = 0; i < MAX_APPROVERS; i++){
             address approver = _approvers[i];
 
             // require address to not be the zero address
@@ -92,7 +103,6 @@ contract Wallet is Ownable{
             isApprover[approver] = true;
             approvers[i] = approver;
         }
-        hasPendingTransaction = false;
     }
 
     // function to allow the contract to recieve funds
@@ -121,8 +131,7 @@ contract Wallet is Ownable{
             destination: _dest,
             value: _value,
             data: _data,
-            creator: msg.sender,
-            approved: false
+            creator: msg.sender
         });
 
         hasPendingTransaction = true;
@@ -139,6 +148,25 @@ contract Wallet is Ownable{
     {
         hasPendingTransaction = false;
         emit RevokePendingTransaction(msg.sender);
+    }
+
+    // confirm and execute the transaction, only if aa different approver submits a transaction to this function
+    function confirmAndExecuteTransaction()
+        public 
+        onlyApprover
+        pendingTransactionExists
+        notTransactionCreator
+    {
+        hasPendingTransaction = false;
+        address confirmer = msg.sender;
+
+        (bool success,) = pendingTransaction.destination.call{value: pendingTransaction.value}(pendingTransaction.data);
+
+        if (success){
+            emit TransactionExecuted(confirmer);
+        } else {
+            revert("unable to execute transaction");
+        }
     }
 
 }

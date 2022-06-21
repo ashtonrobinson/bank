@@ -184,7 +184,7 @@ describe("Wallet Contract Testing Suite", function () {
     });
 
     // correctly create a transaction
-    describe("Transaction Creation", function () {
+    describe("Transaction Creation from Approver", function () {
         let approver;
         let connection;
     
@@ -262,6 +262,84 @@ describe("Wallet Contract Testing Suite", function () {
 
     });
 
-    
+    describe("Transaction creation from Non-Approver", function () {
+        //test 1, use a non approver to attempt to make a request
+        it('non-approver, valid information', async function () {
+            //retrieve a signer that is not an apporver not owner
+            signer = signers.filter(sign => !approvers.includes(sign) && sign != owner)[0];
+            connection = await Wallet.connect(signer);
 
+            await expect(connection.createTransaction(signer.address, ethers.utils.parseEther('1'), "0x"))
+                .to.be.revertedWith("not approver");
+        });
+    });
+
+    describe("Transaction execution, existing transaction", function () {
+        let confirmer;
+        let confirmerConnection;
+        let creator;
+        let creatorConnection;
+        let balanceBefore;
+
+        before(async function () {
+            // ensures that the contract has funds to send
+            assert(await provider.getBalance(Wallet.address) > 0);
+        })
+
+        // intiate a transaction
+        beforeEach(async function () {
+            creator = approvers[Math.floor(Math.random()*3)];
+            creatorConnection = await Wallet.connect(creator);
+
+            // random signer from [1:], ommitting the owner of the contract
+            to = signers[Math.floor(1 + Math.random()*(signers.length-1))];
+
+            amount = ethers.utils.parseEther('1');
+            data = "0x"
+
+            //submit a correct transaction
+            await creatorConnection.createTransaction(to.address, amount, data);
+
+            confirmer = approvers.filter(app => app != creator)[Math.floor(Math.random()*2)];
+            confirmerConnection = await Wallet.connect(confirmer);
+
+            balanceBefore = await provider.getBalance(Wallet.address);
+        });
+
+        // remove the pending transaction if there is one from the creator
+        afterEach(async function () {
+            if (await Wallet.hasPendingTransaction()){
+                await expect(creatorConnection.revokePendingTransaction()).to.emit(Wallet, "RevokePendingTransaction")
+                    .withArgs(creator.address);
+            }
+        });
+
+        // test 1
+        it("revoke transactoin from the confirmer", async function () {
+            await expect(confirmerConnection.revokePendingTransaction()).to.be.revertedWith("only the creator can revoke the pending txn");
+        });
+
+        //test 2, not from creator followed by an approved transaction
+        it("no creator confirmation, second approver succeed", async function () {
+            //attempt to confirm from the creator address
+            await expect(creatorConnection.confirmAndExecuteTransaction()).to.be.revertedWith("creator cannot confirm and execute");
+
+            //now confirm the message from the confirmer
+            await expect(confirmerConnection.confirmAndExecuteTransaction()).to.emit(Wallet, "TransactionExecuted")
+                .withArgs(confirmer.address);
+
+            expect(await provider.getBalance(Wallet.address)).to.equal(balanceBefore.sub(ethers.utils.parseEther('1')));
+            expect(await Wallet.hasPendingTransaction()).to.be.false;
+        });
+
+        it('non approver', async function () {
+            //submit from the owner as this is not an approver
+            ownerConnection = await Wallet.connect(owner);
+
+            await expect(ownerConnection.confirmAndExecuteTransaction()).to.be.revertedWith("not approver");
+
+            expect(await provider.getBalance(Wallet.address)).to.equal(balanceBefore);
+            expect(await Wallet.hasPendingTransaction()).to.be.true;
+        });
+    });
 });
