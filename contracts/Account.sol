@@ -22,9 +22,14 @@ contract Account is Ownable{
         wallet = new Wallet(_owners);
     }
 
-    //getter method to access the wallet 
+    //getter method to access the wallet address
     function getWalletAddress() public view returns (address) {
         return address(wallet);
+    }
+
+    // getter method to access the wallet signers
+    function getWalletSigners() public view returns(address[3] memory){
+        return wallet.getApprovers();
     }
 
     // forward funds to the associated Wallet, exists for security reasons

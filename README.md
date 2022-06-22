@@ -1,2 +1,2 @@
 # Smart Contract Bank Ecosystem
-The following set of smart contracts create a 'bank-like' data structure that exists on Ethereum. 
+The following set of smart contracts create a 'bank-like' data structure that exists on Ethereum. This allows for a single entity to deployt the top level 'Bank' contract, that can create an 'Account' that contains a 'Wallet.' The 'Bank' contract does not allow anyone to freely create an account, as the functions that it contains can only be called by the deployer and the two addresses that the deployer associates with the 'Bank' upon creation. Therefore, 'Bank' can be thought of as a multisignature account generator contract. 

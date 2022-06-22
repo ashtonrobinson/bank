@@ -55,6 +55,12 @@ describe("Account Contract Testing Suite", function () {
             associatedWalletAddr = await Account.getWalletAddress();
             assert(associatedWalletAddr != null);
         });
+
+        //test 3, correct owners of the wallet
+        it('correct wallet owners', async function () {
+            let apprAddrs = approvers.map(appr => appr.address);
+            expect(await Account.getWalletSigners()).to.have.members(apprAddrs);
+        })
     });
 
 
