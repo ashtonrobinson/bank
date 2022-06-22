@@ -3,14 +3,24 @@ require("@nomiclabs/hardhat-web3");
 
 require('dotenv').config();
 
-task("balance", "Prints an account's balance")
-  .addParam("account", "The account's address")
-  .setAction(async (taskArgs) => {
-    const account = web3.utils.toChecksumAddress(taskArgs.account);
-    const balance = await web3.eth.getBalance(account);
+//create a task that can deploy to testnet and save the metadata associated with the deployment
 
-    console.log(web3.utils.fromWei(balance, "ether"), "ETH");
-  });
+extendEnvironment((hre) => {
+  // choose three random addresses to create the wallet with
+  function chooseThree(upperBound) {
+    chosen = new Set();
+    for (let i = 0; i < 3; i++) {
+        let value = Math.floor(Math.random() * upperBound);
+        if (!chosen.has(value)){
+            chosen.add(value);
+        } else {
+            i--;
+        }
+    }
+    return Array.from(chosen);
+  } 
+  hre.chooseThree = chooseThree;
+});
 
 const alchemyKey = process.env.ALCHEMY;
 const devKey = `0x`+ process.env.DEPLOYER;

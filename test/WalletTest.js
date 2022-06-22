@@ -1,5 +1,6 @@
 const { expect, assert } = require('chai');
 const { ethers, waffle } = require("hardhat");
+const hre = require('hardhat');
 
 // testing suite for Account.sol
 describe("Wallet Contract Testing Suite", function () {
@@ -26,24 +27,10 @@ describe("Wallet Contract Testing Suite", function () {
         // pull out owners to test contract with
         [owner, ...signers] = await ethers.getSigners();
 
-        // choose three random addresses to create the wallet with
-        function chooseThree(upperBound) {
-            chosen = new Set();
-            for (let i = 0; i < 3; i++) {
-                let value = Math.floor(Math.random() * upperBound);
-                if (!chosen.has(value)){
-                    chosen.add(value);
-                } else {
-                    i--;
-                }
-            }
-            return Array.from(chosen);
-        }
-
         addresses = new Array();
         approvers = new Array();
 
-        const indicies = chooseThree(signers.length);
+        const indicies = hre.chooseThree(signers.length);
         for(const index of indicies) {
             const appr = signers[index]
             approvers.push(appr);
@@ -85,14 +72,14 @@ describe("Wallet Contract Testing Suite", function () {
             let signer = signers[0];
             let address = signer.address;
 
-            await expect(WalletFactory.deploy([address])).to.be.revertedWith("only 3 signers allowed");
+            await expect(WalletFactory.deploy([address])).to.be.reverted;
         });
 
         // length of approvers is larger
         it('five signers', async function () {
             let addres = signers.slice(5).map(sign => sign.address);
 
-            await expect(WalletFactory.deploy(addres)).to.be.revertedWith("only 3 signers allowed");
+            await expect(WalletFactory.deploy(addres)).to.be.reverted;
         });
 
         //duplicate approvers

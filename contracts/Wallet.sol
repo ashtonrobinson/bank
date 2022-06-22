@@ -34,12 +34,6 @@ contract Wallet is Ownable{
     event RevokePendingTransaction(address indexed creator);
     event TransactionExecuted(address indexed confirmer);
 
-    // only three keys are allowed to be associated with this wallet
-    modifier checkApproversLength(uint len){
-        require(len == MAX_APPROVERS, "only 3 signers allowed");
-        _;
-    }
-
     // check if the interaction with this contract is valid
     modifier onlyApprover(){
         require(isApprover[msg.sender], "not approver");
@@ -88,8 +82,8 @@ contract Wallet is Ownable{
     }
 
     // create a contract 
-    constructor (address[] memory _approvers) 
-        checkApproversLength(_approvers.length)
+    // checkApproversLength is redundant if length of the array is specified
+    constructor (address[3] memory _approvers) 
     {
         for (uint i = 0; i < MAX_APPROVERS; i++){
             address approver = _approvers[i];
