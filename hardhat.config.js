@@ -29,6 +29,9 @@ const appKeyOne = `0x`+ process.env.APPROVER_ONE;
 const appKeyTwo = `0x`+ process.env.APPROVER_TWO;
 const appKeyThree = `0x`+ process.env.APPROVER_THREE;
 
+const bankAppKeyOne = `0x` + process.env.BANK_APPROVER_ONE;
+const bankAppKeyTwo = `0x` + process.env.BANK_APPROVER_TWO;
+
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -41,7 +44,7 @@ module.exports = {
     goerli: {
       url: `https://eth-goerli.alchemyapi.io/v2/${alchemyKey}`,
       chainId: 5,
-      accounts: [devKey, appKeyOne, appKeyTwo, appKeyThree],
+      accounts: [devKey, appKeyOne, appKeyTwo, appKeyThree, bankAppKeyOne, bankAppKeyTwo],
     }
   },
   solidity: {
