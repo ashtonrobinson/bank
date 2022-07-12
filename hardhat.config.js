@@ -7,9 +7,9 @@ require('dotenv').config();
 
 extendEnvironment((hre) => {
   // choose three random addresses to create the wallet with
-  function chooseThree(upperBound) {
+  function choose(upperBound, num) {
     chosen = new Set();
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < num; i++) {
         let value = Math.floor(Math.random() * upperBound);
         if (!chosen.has(value)){
             chosen.add(value);
@@ -19,7 +19,8 @@ extendEnvironment((hre) => {
     }
     return Array.from(chosen);
   } 
-  hre.chooseThree = chooseThree;
+  hre.choose = choose;
+  hre.chooseThree = (upper) => choose(upper, 3);
 });
 
 const alchemyKey = process.env.ALCHEMY;
