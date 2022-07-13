@@ -90,7 +90,8 @@ describe("Bank Contract Testing Suite", function () {
 
     // correct addition of signers followed by account creation
     describe("Approvers Added, Account Creation tests", function () {
-        
+        //variable to store the newly created account address
+        let acctCreatedAddr;
 
         //add the correct approvers
         before(async function () {
@@ -134,10 +135,39 @@ describe("Bank Contract Testing Suite", function () {
                 .to.be.revertedWith("cannot be this address");
             await expect(bankConnTwo.deployAccount([walletAddresses[0], walletAddresses[1], zeroAddr]))
                 .to.be.revertedWith("cannot be zero address");
-            
 
-            
+            //correctly deploy the account
+            await bankConnTwo.deployAccount(walletAddresses);
 
+            acctCreatedAddr = (await Bank.getAccountAddresses())[0];
+            // assert that the account is of length one
+            assert(await Bank.isAccount(acctCreatedAddr));
+
+            // assert that we cannot double deploy
+            await expect(bankConnTwo.deployAccount(walletAddresses)).to.be.revertedWith("no pending account");
+        });
+
+        //test 3, attempt to create a account with invalid wallet addresses
+        it('correct creation, invalid wallet addresses', async function () {
+            first = 'Rob';
+            last = 'Tom';
+            await Bank.createAccount(first, last);
+
+            //use extra signers addresses as fillers to deploy the account
+            extraAddrs = extraSigners.map(sign => sign.address);
+            assert(extraAddrs.length > 2);
+
+            //use the address of the previously deployed account in test 2
+            await expect(bankConnTwo.deployAccount([extraAddrs[0], acctCreatedAddr, extraAddrs[1]]))
+                .to.be.revertedWith("cannot be account address");
+
+            //use the addresses of the wallet tied to the previous account
+            await expect(bankConnTwo.deployAccount([walletAddresses[0], extraAddrs[1], extraAddrs[0]]))
+                .to.be.revertedWith("cannot be a previous signer");
+            await expect(bankConnTwo.deployAccount([extraAddrs[1], walletAddresses[1], extraAddrs[0]]))
+                .to.be.revertedWith("cannot be a previous signer");
+            await expect(bankConnTwo.deployAccount([extraAddrs[2], extraAddrs[0], walletAddresses[2]]))
+                .to.be.revertedWith("cannot be a previous signer");
         });
     }); 
 });

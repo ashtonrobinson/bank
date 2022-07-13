@@ -4,12 +4,13 @@ pragma solidity ^0.8.4;
 
 import "./Account.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 // this is a multisignature account generator contract
 contract Bank is Ownable {
     // store each Account
     // this needs to be optimized
-    Account[] public accounts;
+    address[] public accounts;
     
     // backup keys associated with the bank(issuer of accounts) used for account creation
     address private approver;
@@ -47,6 +48,12 @@ contract Bank is Ownable {
         _;
     }
 
+    //a check to see if there exist any accounts
+    modifier hasAccounts(){
+        require(accounts.length != 0, "no current accounts");
+        _;
+    }
+
     // cannot use signers that have been used in previous Accounts
     // this modifier is extremely space and time intensive as it is searching back through accounts
     // look into EVM ways to limit this in the future
@@ -60,13 +67,24 @@ contract Bank is Ownable {
 
             // iterate over all accounts, this takes too long
             for (uint i = 0; i < accounts.length; i++){
-                Account acct = accounts[i];
-                require(potentialSigner != address(acct), "cannot be account address");
+                address acct = accounts[i];
+                require(potentialSigner != acct, "cannot be account address");
                 
+                // make a low level function call using the account address
+                bytes4 selector = bytes4(keccak256("getWalletSigners()"));
+                (bool success, bytes memory result) = acct.call(abi.encodeWithSelector(selector));
+
                 // loop over signers of existing wallets
-                address[3] memory prevSigners = acct.getWalletSigners();
+                address[3] memory prevSigners;
+
+                if (success){
+                    prevSigners = abi.decode(result, (address[3]));
+                } else {
+                    revert("unable to decode signers");
+                }
+
                 for (uint j = 0; j < 3; j++){
-                    require(potentialSigner != prevSigners[j], "cannot be a previos signer");
+                    require(potentialSigner != prevSigners[j], "cannot be a previous signer");
                 }
             }
         }
@@ -85,6 +103,11 @@ contract Bank is Ownable {
     // this contract will need to be deployed from an key pair account
     constructor() {
         initiated = false;
+    }
+
+    //iterate over all accounts and return the addresses of each Account
+    function getAccountAddresses() public view returns (address[] memory){
+        return accounts;
     }
 
     // signers must be added before accounts can be created
@@ -128,7 +151,7 @@ contract Bank is Ownable {
     }
 
     //function to deploy the account that must come from one of the approvers
-    function deployAccount(address[3] memory _signers)
+    function deployAccount(address[3] memory _signers) 
         public 
         isInitiated
         onlyApprovers
@@ -136,8 +159,17 @@ contract Bank is Ownable {
         correctSigners(_signers)
     {
         Account newAcct = new Account(pendingFirstName, pendingLastName, _signers);
-        accounts.push(newAcct);
+        accounts.push(address(newAcct));
         hasPendingAccount = false;
+    }
+
+    function isAccount(address acctAddr) public view hasAccounts returns (bool) {
+        for (uint i = 0; i < accounts.length; i++){
+            if (acctAddr == accounts[i]){
+                return true;
+            }
+        }
+        return false;
     }
 
 }
