@@ -24,6 +24,10 @@ contract Bank is Ownable {
     string public pendingFirstName;
     string public pendingLastName;
 
+    //event to emit once the account has been deployed
+    event AccountCreated();
+    event AccountDeployed(address indexed acctContract);
+
     // disallow anyone from calling any methods until signers have been added
     modifier isInitiated(){
         require(initiated, "contract has not been initiated yet");
@@ -142,6 +146,8 @@ contract Bank is Ownable {
         pendingLastName = _last;
 
         hasPendingAccount = true;
+
+        emit AccountCreated();
     }
 
     // revoke the pending accounnt so that a new one can be created
@@ -165,8 +171,11 @@ contract Bank is Ownable {
         correctSigners(_signers)
     {
         Account newAcct = new Account(pendingFirstName, pendingLastName, _signers);
-        accounts.push(address(newAcct));
+        address acctAddr = address(newAcct);
+        accounts.push(acctAddr);
         hasPendingAccount = false;
+
+        emit AccountDeployed(acctAddr);
     }
 
     function isAccount(address acctAddr) public view hasAccounts returns (bool) {

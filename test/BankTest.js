@@ -119,7 +119,7 @@ describe("Bank Contract Testing Suite", function () {
             await expect(Bank.revokePendingAccount()).to.be.revertedWith("no pending account");
 
             // correctly create an account and then attempt to create another 
-            await Bank.createAccount('Ash', 'Rob');
+            await expect(Bank.createAccount('Ash', 'Rob')).to.emit(Bank, 'AccountCreated');
             await expect(Bank.createAccount('Other', 'Person')).to.be.revertedWith( "pending account exists");
         });
 
@@ -140,9 +140,9 @@ describe("Bank Contract Testing Suite", function () {
                 .to.be.revertedWith("cannot be zero address");
 
             //correctly deploy the account
-            await bankConnTwo.deployAccount(walletAddresses);
-
+            expect(await bankConnTwo.deployAccount(walletAddresses)).to.emit(Bank, 'AccountDeployed');
             acctCreatedAddr = (await Bank.getAccountAddresses())[0];
+
             // assert that the account is of length one
             assert(await Bank.isAccount(acctCreatedAddr));
 
