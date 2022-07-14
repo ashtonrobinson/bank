@@ -109,6 +109,12 @@ contract Bank is Ownable {
     function getAccountAddresses() public view returns (address[] memory){
         return accounts;
     }
+    
+    //get the address of the approvers of the bank where
+    function getApprovers() public view returns (address[2] memory approvers) {
+        approvers[0] = approver;
+        approvers[1] = fallbackApprover;
+    }
 
     // signers must be added before accounts can be created
     function addSigners(address one, address two) 

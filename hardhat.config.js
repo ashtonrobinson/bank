@@ -41,6 +41,14 @@ module.exports = {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {
+      accounts: [
+        {privateKey: devKey, balance: '10000000000000000000'}, 
+        {privateKey: appKeyOne, balance: '10000000000000000000'}, 
+        {privateKey: appKeyTwo, balance: '10000000000000000000'}, 
+        {privateKey: appKeyThree, balance: '10000000000000000000'}, 
+        {privateKey: bankAppKeyOne, balance: '10000000000000000000'}, 
+        {privateKey: bankAppKeyTwo, balance: '10000000000000000000'}
+      ],
     },
     goerli: {
       url: `https://eth-goerli.alchemyapi.io/v2/${alchemyKey}`,

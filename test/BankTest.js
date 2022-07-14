@@ -97,6 +97,9 @@ describe("Bank Contract Testing Suite", function () {
         before(async function () {
             await Bank.addSigners(bankApprovers[0].address, bankApprovers[1].address);
             assert(await Bank.initiated());
+
+            let apprs = await Bank.getApprovers(); 
+            expect(apprs).to.have.members([bankApprovers[1].address, bankApprovers[0].address]);
         });
 
         // revoke the pending account if it exists
